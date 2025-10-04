@@ -24,7 +24,8 @@ if platform.system() == "Windows":
 
 app = FastAPI()
 keyboard = Controller()
-SECRET = "9WvE75cjPwYLtw" # This password is of little importance, just prevents random people from accessing the page if they find the IP
+SECRET = "9WvE75cjPwYLtw"  # This password is of little importance, just prevents random people from accessing the page if they find the IP
+
 
 def list_windows():
     """Lists all visible windows with a title."""
@@ -48,16 +49,20 @@ def focus_slide_window():
         return
 
     try:
+
         def winEnumHandler(hwnd, ctx):
-            if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd).endswith("PowerPoint Presenter View"):
+            if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd).endswith(
+                "PowerPoint Presenter View"
+            ):
                 shell = win32com.client.Dispatch("WScript.Shell")
-                shell.SendKeys("%") # Send Alt key to prevent focus stealing issues
+                shell.SendKeys("%")  # Send Alt key to prevent focus stealing issues
                 win32gui.SetForegroundWindow(hwnd)
                 return
 
         win32gui.EnumWindows(winEnumHandler, None)
     except Exception as e:
         print(f"Error focusing window: {e}")
+
 
 # HTML content for the frontend with embedded JavaScript
 html = """
@@ -280,12 +285,14 @@ html = """
 </html>
 """
 
+
 @app.get("/{secret_path:path}")
 async def get(secret_path: str):
     # if secret_path != SECRET:
     #     raise HTTPException(status_code=404, detail="Not Found")
     if secret_path == SECRET:
         return HTMLResponse(html)
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -298,26 +305,26 @@ async def websocket_endpoint(websocket: WebSocket):
                 if data.get("secret") != SECRET:
                     print("Invalid secret received. Ignoring.")
                     continue
-                
+
                 action = data.get("action")
                 if action == "left":
                     # focus_slide_window()
                     # time.sleep(0.1)  # slight delay to ensure window focus
                     keyboard.press(Key.left)
                     keyboard.release(Key.left)
-                    print("Left arrow pressed")
+                    print(f"{websocket.client.host} : Left arrow pressed")
                 elif action == "right":
                     # focus_slide_window()
                     # time.sleep(0.1)  # slight delay to ensure window focus
                     keyboard.press(Key.right)
                     keyboard.release(Key.right)
-                    print("Right arrow pressed")
+                    print(f"{websocket.client.host} : Right arrow pressed")
                 elif action == "mute":
                     # keyboard.press(Key.f13)
                     # keyboard.release(Key.f13)
                     keyboard.press(".")
                     keyboard.release(".")
-                    print("Mute toggled")
+                    print(f"{websocket.client.host} : Mute toggled")
             except (json.JSONDecodeError, AttributeError):
                 print("Invalid data format received. Ignoring.")
                 continue
@@ -325,6 +332,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected")
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
