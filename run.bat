@@ -1,1 +1,3 @@
-uv run .\main.py
+@echo off
+uv run main.py
+pause
