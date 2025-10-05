@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.7"
 # dependencies = [
 #     "fastapi>=0.118.0",
 #     "pynput>=1.8.1",
@@ -19,7 +19,7 @@ from pynput.keyboard import Controller, Key
 
 app = FastAPI()
 keyboard = Controller()
-SECRET = "9WvE75cjPwYLtw"  # This password is of little importance, just prevents random people from accessing the page if they find the IP
+SECRET = "web-clicker"  # This password is of little importance, just prevents random people from accessing the page if they find the IP
 
 # HTML content for the frontend with embedded JavaScript
 html = """
