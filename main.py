@@ -7,62 +7,19 @@
 #     "python-multipart>=0.0.20",
 #     "uvicorn>=0.37.0",
 #     "websockets>=15.0.1",
-#     "pywin32>=311; sys_platform == 'win32'",
 # ]
 # ///
 
-import platform
 import json
+import platform
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pynput.keyboard import Controller, Key
-
-if platform.system() == "Windows":
-    import win32com.client
-    import win32gui
 
 app = FastAPI()
 keyboard = Controller()
 SECRET = "9WvE75cjPwYLtw"  # This password is of little importance, just prevents random people from accessing the page if they find the IP
-
-
-def list_windows():
-    """Lists all visible windows with a title."""
-    if platform.system() != "Windows":
-        print("Window listing is only supported on Windows.")
-        return
-
-    def winEnumHandler(hwnd, ctx):
-        if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd) != "":
-            print(f"  - '{win32gui.GetWindowText(hwnd)}'")
-
-    print("Available windows:")
-    win32gui.EnumWindows(winEnumHandler, None)
-    print("-" * 20)
-
-
-def focus_slide_window():
-    """Switch to the window ending with PowerPoint Presenter View"""
-    if platform.system() != "Windows":
-        print("Window focusing is only supported on Windows.")
-        return
-
-    try:
-
-        def winEnumHandler(hwnd, ctx):
-            if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd).endswith(
-                "PowerPoint Presenter View"
-            ):
-                shell = win32com.client.Dispatch("WScript.Shell")
-                shell.SendKeys("%")  # Send Alt key to prevent focus stealing issues
-                win32gui.SetForegroundWindow(hwnd)
-                return
-
-        win32gui.EnumWindows(winEnumHandler, None)
-    except Exception as e:
-        print(f"Error focusing window: {e}")
-
 
 # HTML content for the frontend with embedded JavaScript
 html = """
@@ -72,13 +29,13 @@ html = """
         <title>Web Clicker</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
-            body { 
-                display: flex; 
-                justify-content: center; 
-                align-items: center; 
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
                 height: 80vh;
-                margin: 0; 
-                background-color: #282c34; 
+                margin: 0;
+                background-color: #282c34;
                 font-family: sans-serif;
                 text-align: center;
             }
@@ -93,9 +50,9 @@ html = """
                 flex-direction: column;
                 align-items: center;
                 flex-grow: 1;
-                cursor: pointer; 
-                user-select: none; 
-                color: #61dafb; 
+                cursor: pointer;
+                user-select: none;
+                color: #61dafb;
                 margin: 0 20px;
                 padding: 10px 0;
                 background-color: rgba(255, 255, 255, 0.1);
@@ -288,10 +245,9 @@ html = """
 
 @app.get("/{secret_path:path}")
 async def get(secret_path: str):
-    # if secret_path != SECRET:
-    #     raise HTTPException(status_code=404, detail="Not Found")
     if secret_path == SECRET:
         return HTMLResponse(html)
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 @app.websocket("/ws")
@@ -308,23 +264,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 action = data.get("action")
                 if action == "left":
-                    # focus_slide_window()
-                    # time.sleep(0.1)  # slight delay to ensure window focus
                     keyboard.press(Key.left)
                     keyboard.release(Key.left)
                     print(f"{websocket.client.host} : Left arrow pressed")
                 elif action == "right":
-                    # focus_slide_window()
-                    # time.sleep(0.1)  # slight delay to ensure window focus
                     keyboard.press(Key.right)
                     keyboard.release(Key.right)
                     print(f"{websocket.client.host} : Right arrow pressed")
-                elif action == "mute":
-                    # keyboard.press(Key.f13)
-                    # keyboard.release(Key.f13)
-                    keyboard.press(".")
-                    keyboard.release(".")
-                    print(f"{websocket.client.host} : Mute toggled")
             except (json.JSONDecodeError, AttributeError):
                 print("Invalid data format received. Ignoring.")
                 continue
